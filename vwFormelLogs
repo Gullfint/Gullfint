@@ -1,0 +1,40 @@
+/****** Script for SelectTopNRows command from SSMS  ******/
+SELECT TOP (1000) [LatitudeWgs84]
+      ,[LongitudeWgs84]
+      ,[WellboreIdentifier]
+      ,[FieldIdentifier]
+      ,[CurveName]
+      ,[CurveUnit]
+      ,[IndexMin]
+      ,[NormalizedData]
+      ,[RepLink]
+  FROM [rm].[vwFormelLogs]
+  where curveName like ;
+
+/****** Script for Making data out of Normalizeddata  ******/
+select top (10)
+s.LatitudeWgs84
+, s.LongitudeWgs84
+, l.WellboreIdentifier
+, l.FieldIdentifier
+, l.CurveName
+, l.CurveUnit
+, CAST(SUBSTRING(NormalizedData, CHARINDEX('index_min', NormalizedData)+11, CHARINDEX(',',NormalizedData, CHARINDEX('index_min', NormalizedData))-11-CHARINDEX('index_min', NormalizedData)) AS NUMERIC(10,4)) index_min
+, l.NormalizedData
+, CONCAT('https://rep.equinor.com/#/wellbore/', l.WellboreIdentifier) replink
+from
+dw.WellLog l
+LEFT OUTER JOIN smda.WellboreSurveySample s
+ON (l.WellboreUuid = s.WellboreUuid
+AND s.MD = (
+SELECT
+max(s2.md)
+FROM
+smda.WellboreSurveySample s2
+where 
+s.WellboreUuid = s2.WellboreUuid
+))
+WHERE
+1=1
+and l.source like 'Recall'
+and l.curvename in ('RHOB');
